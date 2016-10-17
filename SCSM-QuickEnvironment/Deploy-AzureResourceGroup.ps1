@@ -66,9 +66,10 @@ if ($UploadArtifacts) {
     # Create DSC configuration archive
     if (Test-Path $DSCSourceFolder) {
         $DSCSourceFilePaths = @(Get-ChildItem $DSCSourceFolder -File -Filter "*.ps1" | ForEach-Object -Process {$_.FullName})
+			$ConfigurationDataPath = "$DSCSourceFolder\ConfigurationData.psd1"
         foreach ($DSCSourceFilePath in $DSCSourceFilePaths) {
             $DSCArchiveFilePath = $DSCSourceFilePath.Substring(0, $DSCSourceFilePath.Length - 4) + ".zip"
-            Publish-AzureRmVMDscConfiguration $DSCSourceFilePath -OutputArchivePath $DSCArchiveFilePath -Force -Verbose
+            Publish-AzureRmVMDscConfiguration $DSCSourceFilePath -OutputArchivePath $DSCArchiveFilePath -ConfigurationDataPath $ConfigurationDataPath -Force -Verbose
         }
     }
 

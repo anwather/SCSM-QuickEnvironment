@@ -34,6 +34,9 @@
     <Content Include="Deploy-AzureResourceGroup.ps1" />
     <Content Include="Templates\azuredeploy.json" />
     <Content Include="Templates\azuredeploy.parameters.json" />
+    <Content Include="DSC\dcExt.ps1" />
+    <Content Include="DSC\ConfigurationData.psd1" />
+    <Content Include="DSC\dscmetadata.json" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>

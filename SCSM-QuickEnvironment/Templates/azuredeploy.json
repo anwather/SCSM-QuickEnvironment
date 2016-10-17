@@ -2,10 +2,249 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "scsmType": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_ZRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+            ]
+        },
+        "scsmDCName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "AdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "AdminPassword": {
+            "type": "securestring"
+        },
+        "scsmDCWindowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2012-R2-Datacenter",
+          "allowedValues": [
+            "2016-Datacenter",
+            "2008-R2-SP1",
+            "2012-Datacenter",
+            "2012-R2-Datacenter",
+            "Windows-Server-Technical-Preview"
+          ]
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+            }
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation"
+            }
+        },
+        "dcExtUpdateTagVersion": {
+            "type": "string",
+            "defaultValue": "1.0",
+            "metadata": {
+                "description": "This value must be changed from a previous deployment to ensure the extension will run"
+            }
+        },
+        "dcpipDnsName": {
+            "type": "string",
+            "minLength": 1
+        }
     },
     "variables": {
+        "scsmName": "[concat('scsm', uniqueString(resourceGroup().id))]",
+        "scsmVNETPrefix": "10.0.0.0/16",
+        "scsmVNETSubnet1Name": "Subnet-1",
+        "scsmVNETSubnet1Prefix": "10.0.0.0/24",
+        "WindowsImagePublisher": "MicrosoftWindowsServer",
+        "WindowsImageOffer": "WindowsServer",
+        "scsmDCOSDiskName": "scsmDCOSDisk",
+        "smallVmSize": "Standard_D1_v2",
+        "scsmDCVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'scsmVNET')]",
+        "SubnetRef": "[concat(variables('scsmDCVnetID'), '/subnets/', variables('scsmVNETSubnet1Name'))]",
+        "StorageAccountContainerName": "vhds",
+        "scsmDCNicName": "[concat(parameters('scsmDCName'), 'NetworkInterface')]",
+        "dcExtArchiveFolder": "DSC",
+        "dcExtArchiveFileName": "dcExt.zip",
+        "dcpipName": "dcpip"
     },
     "resources": [
+        {
+            "name": "[variables('scsmName')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "scsm"
+            },
+            "properties": {
+                "accountType": "[parameters('scsmType')]"
+            }
+        },
+        {
+            "name": "scsmVNET",
+            "type": "Microsoft.Network/virtualNetworks",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "scsmVNET"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('scsmVNETPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('scsmVNETSubnet1Name')]",
+                        "properties": {
+                            "addressPrefix": "[variables('scsmVNETSubnet1Prefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('scsmDCNicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', 'scsmVNET')]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('dcpipName'))]"
+            ],
+            "tags": {
+                "displayName": "scsmDCNic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('SubnetRef')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('dcpipName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('scsmDCName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('scsmName'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('scsmDCNicName'))]"
+            ],
+            "tags": {
+                "displayName": "scsmDC"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('smallVmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('scsmDCName')]",
+                    "adminUsername": "[parameters('AdminUsername')]",
+                    "adminPassword": "[parameters('AdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('WindowsImagePublisher')]",
+                        "offer": "[variables('WindowsImageOffer')]",
+                        "sku": "[parameters('scsmDCWindowsOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "scsmDCOSDisk",
+                        "vhd": {
+                            "uri": "[concat('https://', variables('scsmName'), '.blob.core.windows.net/', variables('StorageAccountContainerName'), '/', variables('scsmDCOSDiskName'), '.vhd')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('scsmDCNicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "Microsoft.Powershell.DSC",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('scsmDCName'))]"
+                    ],
+                    "tags": {
+                        "displayName": "dcExt"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "2.9",
+                        "autoUpgradeMinorVersion": true,
+                        "forceUpdateTag": "[parameters('dcExtUpdateTagVersion')]",
+                        "settings": {
+                            "configuration": {
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('dcExtArchiveFolder'), '/', variables('dcExtArchiveFileName'))]",
+                                "script": "dcExt.ps1",
+                                "function": "Main"
+                            },
+                          "configurationArguments": {
+                            "nodeName": "[parameters('scsmDCName')]",
+                            "AdminCredential": {
+                              "UserName": "[parameters('AdminUserName')]",
+                              "Password": "PrivateSettingsRef:AdminPassword"
+                            }
+                          }
+                        },
+                        "protectedSettings": {
+                          "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]",
+                          "AdminPassword": "[parameters('AdminPassword')]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[variables('dcpipName')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "dcpip"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dcpipDnsName')]"
+                }
+            }
+        }
     ],
     "outputs": {
     }

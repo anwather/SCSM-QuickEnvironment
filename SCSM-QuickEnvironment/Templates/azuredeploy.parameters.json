@@ -2,5 +2,20 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "scsmDCName": {
+            "value": "SCSM-DC01"
+        },
+        "AdminUserName": {
+            "value": "s-admin"
+        },
+        "AdminPassword": {
+            "value": "Njc9addh1234"
+        },
+        "scsmDCWindowsOSVersion": {
+            "value": "2016-Datacenter"
+        },
+        "dcpipDnsName": {
+            "value": "dcpipdns"
+        }
     }
 }
