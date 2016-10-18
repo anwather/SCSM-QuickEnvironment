@@ -37,6 +37,7 @@
     <Content Include="DSC\dcExt.ps1" />
     <Content Include="DSC\ConfigurationData.psd1" />
     <Content Include="DSC\dscmetadata.json" />
+    <Content Include="DSC\ms1ext.ps1" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>

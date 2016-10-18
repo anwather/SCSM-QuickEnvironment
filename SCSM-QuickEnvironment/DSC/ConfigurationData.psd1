@@ -17,8 +17,18 @@
 			DNSServerAddress = '127.0.0.1'
             InterfaceAlias = 'Ethernet'
             AddressFamily = 'IPv4'
+		},
+		@{
+			NodeName = 'SCSM-MS01'
+			PSDscAllowDomainUser = $true
+			PSDscAllowPlainTextPassword = $true
+			DomainName = 'scsm.lab'
+            DomainNetBIOSName = 'scsm'
+			DNSServerAddress = '10.6.0.4'
+            InterfaceAlias = 'Ethernet'
+            AddressFamily = 'IPv4'
 			SqlSourcePath = "C:\SQLServer_12.0_Full"
-			SysAdminAccounts = 'cmtp\s-admin'
+			SysAdminAccounts = 'scsm\s-admin'
 		}
 	)
 }

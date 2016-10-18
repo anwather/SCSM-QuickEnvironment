@@ -57,6 +57,17 @@
         "dcpipDnsName": {
             "type": "string",
             "minLength": 1
+        },
+        "scsmMS1Name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "ms1extUpdateTagVersion": {
+            "type": "string",
+            "defaultValue": "1.0",
+            "metadata": {
+                "description": "This value must be changed from a previous deployment to ensure the extension will run"
+            }
         }
     },
     "variables": {
@@ -74,7 +85,14 @@
         "scsmDCNicName": "[concat(parameters('scsmDCName'), 'NetworkInterface')]",
         "dcExtArchiveFolder": "DSC",
         "dcExtArchiveFileName": "dcExt.zip",
-        "dcpipName": "dcpip"
+        "dcpipName": "dcpip",
+        "SQLImagePublisher": "MicrosoftSQLServer",
+        "SQLImageOffer": "SQL2014SP1-WS2012R2",
+        "scsmMS1OSDiskName": "scsmMS1OSDisk",
+        "SQLVmSize": "Standard_D2_v2",
+        "scsmMS1NicName": "[concat(parameters('scsmMS1Name'), 'NetworkInterface')]",
+        "ms1extArchiveFolder": "DSC",
+        "ms1extArchiveFileName": "ms1ext.zip"
     },
     "resources": [
         {
@@ -244,6 +262,111 @@
                     "domainNameLabel": "[parameters('dcpipDnsName')]"
                 }
             }
+        },
+        {
+            "name": "[variables('scsmMS1NicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', 'scsmVNET')]"
+            ],
+            "tags": {
+                "displayName": "scsmMS1Nic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('SubnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('scsmMS1Name')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('scsmName'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('scsmMS1NicName'))]"
+            ],
+            "tags": {
+                "displayName": "scsmMS1"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('SQLVmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('scsmMS1Name')]",
+                    "adminUsername": "[parameters('AdminUsername')]",
+                    "adminPassword": "[parameters('AdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('SQLImagePublisher')]",
+                        "offer": "[variables('SQLImageOffer')]",
+                        "sku": "Enterprise",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "scsmMS1OSDisk",
+                        "vhd": {
+                            "uri": "[concat('https://', variables('scsmName'), '.blob.core.windows.net/', variables('StorageAccountContainerName'), '/', variables('scsmMS1OSDiskName'), '.vhd')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('scsmMS1NicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "Microsoft.Powershell.DSC",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2015-06-15",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', parameters('scsmMS1Name'))]"
+                    ],
+                    "tags": {
+                        "displayName": "ms1ext"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "2.9",
+                        "autoUpgradeMinorVersion": true,
+                        "forceUpdateTag": "[parameters('ms1extUpdateTagVersion')]",
+                        "settings": {
+                            "configuration": {
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('ms1extArchiveFolder'), '/', variables('ms1extArchiveFileName'))]",
+                                "script": "ms1ext.ps1",
+                                "function": "Main"
+                            },
+                            "configurationArguments": {
+                                "nodeName": "[parameters('scsmMS1Name')]"
+                            }
+                        },
+                        "protectedSettings": {
+                            "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+                        }
+                    }
+                }
+            ]
         }
     ],
     "outputs": {

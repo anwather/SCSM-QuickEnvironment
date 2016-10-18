@@ -1,4 +1,4 @@
 ﻿{
   "ConfigurationData": "ConfigurationData.psd1",
-  "Modules": [ "xActiveDirectory", "xNetworking" ]
+  "Modules": [ "xActiveDirectory", "xNetworking" ,"xComputerManagement", "xSQLServer" ]
 }
