@@ -25,9 +25,10 @@ Node $nodeName
 	  
 	xComputer AddtoDomain
 		{
-			Name = $NodeName
+			Name = $env:ComputerName
 			DomainName = $Node.DomainName
 			Credential = $DomainAdminCredential
+			DependsOn = "[xDNSServerAddress]DNSServer_Address"
 		} 
   }
 }
