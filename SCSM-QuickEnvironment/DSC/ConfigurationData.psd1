@@ -23,8 +23,7 @@
 			PSDscAllowDomainUser = $true
 			PSDscAllowPlainTextPassword = $true
 			DomainName = 'scsm.lab'
-            DomainNetBIOSName = 'scsm'
-			DNSServerAddress = '10.6.0.4'
+			DNSServerAddress = '10.0.0.4'
             InterfaceAlias = 'Ethernet'
             AddressFamily = 'IPv4'
 			SqlSourcePath = "C:\SQLServer_12.0_Full"

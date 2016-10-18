@@ -16,6 +16,15 @@
         },
         "dcpipDnsName": {
             "value": "dcpipdns"
+        },
+        "DomainAdminUserName": {
+            "value": "scsm\\s-admin"
+        },
+        "scsmMS1Name": {
+            "value": "SCSM-MS01"
+        },
+        "ms1pipDnsName": {
+            "value": "ms1pipdns"
         }
     }
 }

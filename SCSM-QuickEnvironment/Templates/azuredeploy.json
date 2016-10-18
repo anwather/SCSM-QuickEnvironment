@@ -1,75 +1,83 @@
 ﻿{
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {
-        "scsmType": {
-            "type": "string",
-            "defaultValue": "Standard_LRS",
-            "allowedValues": [
-                "Standard_LRS",
-                "Standard_ZRS",
-                "Standard_GRS",
-                "Standard_RAGRS",
-                "Premium_LRS"
-            ]
-        },
-        "scsmDCName": {
-            "type": "string",
-            "minLength": 1
-        },
-        "AdminUserName": {
-            "type": "string",
-            "minLength": 1
-        },
-        "AdminPassword": {
-            "type": "securestring"
-        },
-        "scsmDCWindowsOSVersion": {
-            "type": "string",
-            "defaultValue": "2012-R2-Datacenter",
-          "allowedValues": [
-            "2016-Datacenter",
-            "2008-R2-SP1",
-            "2012-Datacenter",
-            "2012-R2-Datacenter",
-            "Windows-Server-Technical-Preview"
-          ]
-        },
-        "_artifactsLocation": {
-            "type": "string",
-            "metadata": {
-                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-            }
-        },
-        "_artifactsLocationSasToken": {
-            "type": "securestring",
-            "metadata": {
-                "description": "Auto-generated token to access _artifactsLocation"
-            }
-        },
-        "dcExtUpdateTagVersion": {
-            "type": "string",
-            "defaultValue": "1.0",
-            "metadata": {
-                "description": "This value must be changed from a previous deployment to ensure the extension will run"
-            }
-        },
-        "dcpipDnsName": {
-            "type": "string",
-            "minLength": 1
-        },
-        "scsmMS1Name": {
-            "type": "string",
-            "minLength": 1
-        },
-        "ms1extUpdateTagVersion": {
-            "type": "string",
-            "defaultValue": "1.0",
-            "metadata": {
-                "description": "This value must be changed from a previous deployment to ensure the extension will run"
-            }
-        }
+  "parameters": {
+    "scsmType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
     },
+    "scsmDCName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "AdminUserName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "DomainAdminUserName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "AdminPassword": {
+      "type": "securestring"
+    },
+    "scsmDCWindowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2012-R2-Datacenter",
+      "allowedValues": [
+        "2016-Datacenter",
+        "2008-R2-SP1",
+        "2012-Datacenter",
+        "2012-R2-Datacenter",
+        "Windows-Server-Technical-Preview"
+      ]
+    },
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
+    },
+    "dcExtUpdateTagVersion": {
+      "type": "string",
+      "defaultValue": "1.0",
+      "metadata": {
+        "description": "This value must be changed from a previous deployment to ensure the extension will run"
+      }
+    },
+    "dcpipDnsName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scsmMS1Name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ms1extUpdateTagVersion": {
+      "type": "string",
+      "defaultValue": "1.0",
+      "metadata": {
+        "description": "This value must be changed from a previous deployment to ensure the extension will run"
+      }
+    },
+    "ms1pipDnsName": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
     "variables": {
         "scsmName": "[concat('scsm', uniqueString(resourceGroup().id))]",
         "scsmVNETPrefix": "10.0.0.0/16",
@@ -83,7 +91,7 @@
         "SubnetRef": "[concat(variables('scsmDCVnetID'), '/subnets/', variables('scsmVNETSubnet1Name'))]",
         "StorageAccountContainerName": "vhds",
         "scsmDCNicName": "[concat(parameters('scsmDCName'), 'NetworkInterface')]",
-        "dcExtArchiveFolder": "DSC",
+        "ArchiveFolder": "DSC",
         "dcExtArchiveFileName": "dcExt.zip",
         "dcpipName": "dcpip",
         "SQLImagePublisher": "MicrosoftSQLServer",
@@ -91,8 +99,9 @@
         "scsmMS1OSDiskName": "scsmMS1OSDisk",
         "SQLVmSize": "Standard_D2_v2",
         "scsmMS1NicName": "[concat(parameters('scsmMS1Name'), 'NetworkInterface')]",
-        "ms1extArchiveFolder": "DSC",
-        "ms1extArchiveFileName": "ms1ext.zip"
+        
+        "ms1extArchiveFileName": "ms1ext.zip",
+        "ms1pipName": "ms1pip"
     },
     "resources": [
         {
@@ -227,7 +236,7 @@
                         "forceUpdateTag": "[parameters('dcExtUpdateTagVersion')]",
                         "settings": {
                             "configuration": {
-                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('dcExtArchiveFolder'), '/', variables('dcExtArchiveFileName'))]",
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('ArchiveFolder'), '/', variables('dcExtArchiveFileName'))]",
                                 "script": "dcExt.ps1",
                                 "function": "Main"
                             },
@@ -269,7 +278,8 @@
             "location": "[resourceGroup().location]",
             "apiVersion": "2015-06-15",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', 'scsmVNET')]"
+                "[resourceId('Microsoft.Network/virtualNetworks', 'scsmVNET')]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('ms1pipName'))]"
             ],
             "tags": {
                 "displayName": "scsmMS1Nic"
@@ -282,6 +292,9 @@
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
                                 "id": "[variables('SubnetRef')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('ms1pipName'))]"
                             }
                         }
                     }
@@ -353,20 +366,41 @@
                         "forceUpdateTag": "[parameters('ms1extUpdateTagVersion')]",
                         "settings": {
                             "configuration": {
-                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('ms1extArchiveFolder'), '/', variables('ms1extArchiveFileName'))]",
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('ArchiveFolder'), '/', variables('ms1extArchiveFileName'))]",
                                 "script": "ms1ext.ps1",
                                 "function": "Main"
                             },
-                            "configurationArguments": {
-                                "nodeName": "[parameters('scsmMS1Name')]"
+                          "configurationArguments": {
+                            "nodeName": "[parameters('scsmMS1Name')]",
+                            "DomainAdminCredential": {
+                              "UserName": "[parameters('DomainAdminUserName')]",
+                              "Password": "PrivateSettingsRef:AdminPassword"
                             }
+                          }
                         },
-                        "protectedSettings": {
-                            "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
-                        }
+                      "protectedSettings": {
+                        "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]",
+                        "AdminPassword": "[parameters('AdminPassword')]"
+                      }
                     }
                 }
             ]
+        },
+        {
+            "name": "[variables('ms1pipName')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [ ],
+            "tags": {
+                "displayName": "ms1pip"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('ms1pipDnsName')]"
+                }
+            }
         }
     ],
     "outputs": {
