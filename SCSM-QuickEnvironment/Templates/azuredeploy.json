@@ -28,6 +28,9 @@
     "AdminPassword": {
       "type": "securestring"
     },
+    "DomainAdminPassword": {
+      "type": "securestring"
+    },
     "scsmDCWindowsOSVersion": {
       "type": "string",
       "defaultValue": "2012-R2-Datacenter",
@@ -374,13 +377,13 @@
                             "nodeName": "[parameters('scsmMS1Name')]",
                             "DomainAdminCredential": {
                               "UserName": "[parameters('DomainAdminUserName')]",
-                              "Password": "PrivateSettingsRef:AdminPassword"
+                              "Password": "PrivateSettingsRef:DomainAdminPassword"
                             }
                           }
                         },
                       "protectedSettings": {
                         "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]",
-                        "AdminPassword": "[parameters('AdminPassword')]"
+                        "DomainAdminPassword": "[parameters('DomainAdminPassword')]"
                       }
                     }
                 }

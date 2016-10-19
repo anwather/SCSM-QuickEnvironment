@@ -1,30 +1,33 @@
 ﻿{
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {
-        "scsmDCName": {
-            "value": "SCSM-DC01"
-        },
-        "AdminUserName": {
-            "value": "s-admin"
-        },
-        "AdminPassword": {
-            "value": "Njc9addh1234"
-        },
-        "scsmDCWindowsOSVersion": {
-            "value": "2016-Datacenter"
-        },
-        "dcpipDnsName": {
-            "value": "dcpipdns"
-        },
-        "DomainAdminUserName": {
-            "value": "scsm\\s-admin"
-        },
-        "scsmMS1Name": {
-            "value": "SCSM-MS01"
-        },
-        "ms1pipDnsName": {
-            "value": "ms1pipdns"
-        }
+  "parameters": {
+    "scsmDCName": {
+      "value": "SCSM-DC01"
+    },
+    "AdminUserName": {
+      "value": "s-admin"
+    },
+    "AdminPassword": {
+      "value": "Njc9addh1234"
+    },
+    "scsmDCWindowsOSVersion": {
+      "value": "2012-R2-Datacenter"
+    },
+    "dcpipDnsName": {
+      "value": "dcpipdns"
+    },
+    "DomainAdminUserName": {
+      "value": "scsm\\s-admin"
+    },
+    "DomainAdminPassword": {
+      "value": "Njc9addh1234"
+    },
+    "scsmMS1Name": {
+      "value": "SCSM-MS01"
+    },
+    "ms1pipDnsName": {
+      "value": "ms1pipdns"
     }
+  }
 }

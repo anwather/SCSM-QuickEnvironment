@@ -1,7 +1,7 @@
 Configuration Main
 {
 
-Param ( [string] $nodeName, [pscredential] $DomainAdminCredential )
+Param ([string]$nodeName, [pscredential]$DomainAdminCredential)
 
 Import-DscResource -ModuleName PSDesiredStateConfiguration,xNetworking,xComputerManagement,xSQLServer
 
